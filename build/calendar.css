@@ -1,0 +1,101 @@
+.wc-calendar {
+  background-color: #fff; }
+
+.wc-calendar__header {
+  position: relative;
+  height: 40px;
+  border-bottom: 2px solid gray;
+  overflow: hidden;
+  text-align: center; }
+
+.wc-calendar__header__date {
+  display: inline-block; }
+
+.wc-calendar__btn {
+  height: 32px;
+  padding: 0 15px;
+  border: none;
+  border-radius: 5px;
+  color: #fff;
+  font-size: 12px;
+  line-height: 32px;
+  background-color: #4889ff;
+  cursor: pointer; }
+  .wc-calendar__btn:focus, .wc-calendar__btn:active {
+    outline: none; }
+  .wc-calendar__btn:hover {
+    background-color: #83AFFF; }
+
+.wc-calendar__btn--prev {
+  float: left; }
+
+.wc-calendar__btn--next {
+  float: right; }
+
+.wc-calendar__days-names,
+.wc-calendar__days-list {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-flex-wrap: wrap;
+      -ms-flex-wrap: wrap;
+          flex-wrap: wrap;
+  list-style: none;
+  padding: 0; }
+
+.wc-calendar__days-names {
+  border-bottom: 1px solid #2f4f4f; }
+
+.wc-calendar__days-names__item,
+.wc-calendar__days-list__item {
+  width: 14.2%;
+  -webkit-box-flex: 1;
+  -webkit-flex-grow: 1;
+      -ms-flex-positive: 1;
+          flex-grow: 1;
+  text-align: center; }
+
+.wc-calendar__days-names__item {
+  padding-top: 10px; }
+
+.wc-calendar__days-list__item {
+  height: 60px;
+  line-height: 60px;
+  cursor: pointer; }
+
+.wc-calendar__days-list__item--active {
+  color: #fff;
+  background-color: #4889ff; }
+
+.wc-calendar__days-list__item--prev-month,
+.wc-calendar__days-list__item--next-month {
+  color: gray; }
+
+.wc-calendar__days-list__item--active.wc-calendar__days-list__item--prev-month,
+.wc-calendar__days-list__item--active.wc-calendar__days-list__item--next-month {
+  border: 1px solid #4889ff;
+  background-color: #fff; }
+
+/* testing styles */
+.red-class {
+  background-color: red; }
+
+.gray-class {
+  background-color: gray; }
+
+.calendar-form {
+  width: 300px;
+  padding: 10px;
+  border: 1px solid gray; }
+
+.control-group + .control-group {
+  margin-top: 5px; }
+
+.control-label {
+  display: inline-block;
+  width: 94px;
+  font-size: 14px; }
+
+.control-input {
+  width: 197px; }
