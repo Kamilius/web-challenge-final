@@ -10,6 +10,7 @@ class WeatherWidget {
         long: ''
       }
     }
+    this.units = 'imperial'
     this.data = {}
     // this.data = JSON.parse(`"{"coord":{"lon":19.92,"lat":50.08},"weather":[{"id":500,"main":"Rain","description":"light rain","icon":"10d"}],"base":"cmc stations","main":{"temp":284.296,"pressure":996.52,"humidity":94,"temp_min":284.296,"temp_max":284.296,"sea_level":1036.48,"grnd_level":996.52},"wind":{"speed":4.87,"deg":251.001},"rain":{"3h":0.355},"clouds":{"all":92},"dt":1446905830,"sys":{"message":0.0029,"country":"PL","sunrise":1446874822,"sunset":1446908817},"id":3094802,"name":"Krakow","cod":200}`)
 
@@ -28,9 +29,9 @@ class WeatherWidget {
 
   _getFetchDataUrl() {
     if (this.city.name) {
-      return `http://api.openweathermap.org/data/2.5/weather?q=${this.city.name}&APPID=${this._apiToken}`
+      return `http://api.openweathermap.org/data/2.5/weather?q=${this.city.name}&units=${this.units}&APPID=${this._apiToken}`
     } else if (this.city.coords.lat && this.city.coords.long) {
-      return `http://api.openweathermap.org/data/2.5/weather?lat=${this.city.coords.lat}&lon=${this.city.coords.long}&APPID=${this._apiToken}`
+      return `http://api.openweathermap.org/data/2.5/weather?lat=${this.city.coords.lat}&lon=${this.city.coords.long}&units=${this.units}&APPID=${this._apiToken}`
     } else {
       alert("please, enter a city name")
     }
@@ -67,6 +68,10 @@ class WeatherWidget {
     this._fetchWeatherData()
   }
 
+  _formatTemperature(val) {
+    return `${val}°${this.units === 'imperial' ? 'F' : 'C'}`
+  }
+
   renderDataPreloader() {
     document.querySelector('.ewc-weather-widget__weather-wrapper').innerHTML = `
 <div class="ewc-weather-widget__preloader></div>"`
@@ -75,10 +80,10 @@ class WeatherWidget {
   renderWeatherData() {
     document.querySelector('.ewc-weather-widget__weather-wrapper').innerHTML = `
 <div class="ewc-weather-widget__temp-wrapper">
-  <div class="ewc-weather-widget__temp">${this.data.main.temp}</div>
+  <div class="ewc-weather-widget__temp">${this._formatTemperature(this.data.main.temp)}</div>
   <div class="ewc-weather-widget__temp-details">
-    <span class="ewc-weather-widget__temp-details--min">${this.data.temp_min}/</span>
-    <span class="ewc-weather-widget__temp-details--max">${this.data.temp_max}</span>
+    <span class="ewc-weather-widget__temp-details--min">${this._formatTemperature(this.data.main.temp_min)}/</span>
+    <span class="ewc-weather-widget__temp-details--max">${this._formatTemperature(this.data.main.temp_max)}</span>
   </div>
   <div class="ewc-weather-widget__pressure">Pressure: ${this.data.main.pressure}</div>
   <div class="ewc-weather-widget__wind-speed">W.Speed: ${this.data.wind.speed}</div>
@@ -86,7 +91,7 @@ class WeatherWidget {
 </div>
 <div class="ewc-weather-widget__visual-wrapper">
   <div class="ewc-weather-widget__icon"></div>
-  <div class="ewc-weather-widget__verbal">${this.data.weather.description}</div>
+  <div class="ewc-weather-widget__verbal">${this.data.weather[0].main}</div>
 </div>`
   }
 
