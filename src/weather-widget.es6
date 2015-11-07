@@ -1,30 +1,42 @@
 class WeatherWidget {
-  constructor(container) {
+  constructor(container, city = '', units = 'imperial') {
     this.$container = container ? document.querySelector(container) : null
-    this._isLoading = true
+
     this._apiToken = 'e9fe3f5afd851cde0ed9e772511bc03a'
     this.city = {
-      name: 'Krakow',
+      name: city,
       coords: {
         lat: '',
         long: ''
       }
     }
-    this.units = 'imperial'
+    this.units = units
     this.data = {}
-    // this.data = JSON.parse(`"{"coord":{"lon":19.92,"lat":50.08},"weather":[{"id":500,"main":"Rain","description":"light rain","icon":"10d"}],"base":"cmc stations","main":{"temp":284.296,"pressure":996.52,"humidity":94,"temp_min":284.296,"temp_max":284.296,"sea_level":1036.48,"grnd_level":996.52},"wind":{"speed":4.87,"deg":251.001},"rain":{"3h":0.355},"clouds":{"all":92},"dt":1446905830,"sys":{"message":0.0029,"country":"PL","sunrise":1446874822,"sunset":1446908817},"id":3094802,"name":"Krakow","cod":200}`)
 
     navigator.geolocation.getCurrentPosition(this._getPositionSuccess.bind(this),
                                              this._fetchWeatherData.bind(this))
 
-    this.generateMarkup()
+    this._generateMarkup()
+    this._bootstrapEvents()
   }
 
   _getPositionSuccess(position) {
-    this.city.coords.lat  = position.coords.latitude
+    this.city.coords.lat = position.coords.latitude
     this.city.coords.long = position.coords.longitude
 
     this._fetchWeatherData()
+  }
+
+  _showWarningMessage() {
+    this.$container.querySelector('.js-ewc-loc-detection-warning')
+                   .classList
+                   .add('ewc-weather-widget__loc-detection-warning--visible')
+  }
+
+  _hideLocationWarning() {
+    this.$container.querySelector('.js-ewc-loc-detection-warning')
+                   .classList
+                   .remove('ewc-weather-widget__loc-detection-warning--visible')
   }
 
   _getFetchDataUrl() {
@@ -33,7 +45,11 @@ class WeatherWidget {
     } else if (this.city.coords.lat && this.city.coords.long) {
       return `http://api.openweathermap.org/data/2.5/weather?lat=${this.city.coords.lat}&lon=${this.city.coords.long}&units=${this.units}&APPID=${this._apiToken}`
     } else {
-      alert("please, enter a city name")
+      this._openSettings()
+
+      this.$container.querySelector('.js-ewc-loc-detection-warning')
+                     .classList
+                     .add('ewc-weather-widget__loc-detection-warning--visible')
     }
   }
 
@@ -49,10 +65,19 @@ class WeatherWidget {
       var OK = 200; // status 200 is a successful return.
       if (xhr.readyState === DONE) {
         if (xhr.status === OK) {
-          this.data = JSON.parse(xhr.responseText)
-          this.city.name = this.data.name
+          let data = JSON.parse(xhr.responseText)
 
-          this.renderWeatherData()
+          if (data.cod && data.cod === '404' ) {
+            this._showWarningMessage()
+            this._openSettings()
+          } else {
+            this.data = data
+            this.city.name = this.data.name
+
+            this._updateCity()
+            this._renderWeatherData()
+            this._closeSettings()
+          }
         } else {
           console.log('Error: ' + xhr.status); // An error occurred during the request.
         }
@@ -62,22 +87,28 @@ class WeatherWidget {
     xhr.send()
   }
 
-  changeCity(event) {
-    this.data.city = event.target.value
+  _updateCity() {
+    this.$container.querySelector('.ewc-weather-widget__header').innerHTML = this.city.name
+  }
 
-    this._fetchWeatherData()
+  _getWeatherIconURL() {
+    return `http://openweathermap.org/img/w/${this.data.weather[0].icon}.png`
   }
 
   _formatTemperature(val) {
     return `${val}°${this.units === 'imperial' ? 'F' : 'C'}`
   }
 
-  renderDataPreloader() {
-    document.querySelector('.ewc-weather-widget__weather-wrapper').innerHTML = `
-<div class="ewc-weather-widget__preloader></div>"`
+  _formatWindSpeed(val) {
+    return `${val} ${this.units === 'imperial' ? 'mph' : 'm/s'}`
   }
 
-  renderWeatherData() {
+  renderDataPreloader() {
+    document.querySelector('.ewc-weather-widget__weather-wrapper').innerHTML = `
+<div class="ewc-weather-widget__preloader>Loading...</div>"`
+  }
+
+  _renderWeatherData() {
     document.querySelector('.ewc-weather-widget__weather-wrapper').innerHTML = `
 <div class="ewc-weather-widget__temp-wrapper">
   <div class="ewc-weather-widget__temp">${this._formatTemperature(this.data.main.temp)}</div>
@@ -85,18 +116,23 @@ class WeatherWidget {
     <span class="ewc-weather-widget__temp-details--min">${this._formatTemperature(this.data.main.temp_min)}/</span>
     <span class="ewc-weather-widget__temp-details--max">${this._formatTemperature(this.data.main.temp_max)}</span>
   </div>
-  <div class="ewc-weather-widget__pressure">Pressure: ${this.data.main.pressure}</div>
-  <div class="ewc-weather-widget__wind-speed">W.Speed: ${this.data.wind.speed}</div>
-  <div class="ewc-weather-widget__wind-direction">W.Direction: ${this.data.wind.deg}</div>
+  <div class="ewc-weather-widget__pressure">Pressure: ${this.data.main.pressure} hPa</div>
+  <div class="ewc-weather-widget__wind-speed">W.Speed: ${this._formatWindSpeed(this.data.wind.speed)}</div>
+  <div class="ewc-weather-widget__wind-direction">
+    W.Direction:
+    <span class="ewc-weather-widget__compass" style="transform: rotate(${this.data.wind.deg}deg);">&uarr;</span>
+  </div>
 </div>
 <div class="ewc-weather-widget__visual-wrapper">
-  <div class="ewc-weather-widget__icon"></div>
+  <img class="ewc-weather-widget__icon js-ewc-weather-icon"
+       src="${this._getWeatherIconURL()}"
+       alt="weather-icon"
+       title="${this.data.weather[0].description}"/>
   <div class="ewc-weather-widget__verbal">${this.data.weather[0].main}</div>
 </div>`
   }
 
-  generateMarkup() {
-
+  _generateMarkup() {
     // if container query wasn't specified
     if (!this.$container) {
       // create new container element
@@ -112,6 +148,43 @@ class WeatherWidget {
     this.$container.classList.add('ewc-weather-widget');
     // form calendar markup
     this.$container.innerHTML = `
+  <div class="ewc-weather-widget__btn ewc-weather-widget__btn--open-settings js-ewc-open-settings-btn"></div>
+  <div class="ewc-weather-widget__settings">
+    <div class="ewc-weather-widget__btn ewc-weather-widget__btn--close-settings js-ewc-close-settings-btn"></div>
+    <div class="ewc-weather-widget__loc-detection-warning js-ewc-loc-detection-warning">
+      Unable to detect your position automatically. Please type your city name.
+    </div>
+    <ul class="ewc-weather-widget__settings-list">
+      <li class="ewc-weather-widget__settings-item">
+        <label for="ewc-city-name">City: </label>
+        <input id="ewc-city-name"
+               type="text"
+               placeholder="Type city name here"
+               value=${this.city.name}/>
+      </li>
+      <li class="ewc-weather-widget__settings-item">
+        <label>Units: </label>
+        <label for="ewc-unit-imperial">
+          °F
+          <input name="ewc-units"
+                 id="ewc-unit-imperial"
+                 type="radio"
+                 value="imperial"
+                 checked="checked" />
+        </label>
+        <label for="ewc-unit-metric">
+          °C
+          <input name="ewc-units"
+                 id="ewc-unit-metric"
+                 type="radio"
+                 value="metric" />
+        </label>
+      </li>
+      <li class="ewc-weather-widget__settings-item">
+        <button class="ewc-weather-widget__save-btn js-ewc-save-settings-btn">Save</button>
+      </li>
+    </ul>
+  </div>
   <div class="ewc-weather-widget__description">
     <div class="ewc-weather-widget__header">
       ${this.city.name}
@@ -127,9 +200,55 @@ class WeatherWidget {
   </div>`
   }
 
-  bootstrapEvents() {
+  _openSettings(event) {
+    this.$container.querySelector('.ewc-weather-widget__settings')
+                .classList.add('ewc-weather-widget__settings--active')
+  }
+
+  _closeSettings(event) {
+    if (this.city.name) {
+      this.$container.querySelector('.ewc-weather-widget__settings')
+                  .classList.remove('ewc-weather-widget__settings--active')
+
+      this._hideLocationWarning()
+    }
+  }
+
+  changeCity(event) {
+    this.$container.querySelector('.ewc-weather-widget__settings')
+                .classList.add('ewc-weather-widget__settings--active')
+  }
+
+  saveSettings() {
+    var city = this.$container.querySelector('#ewc-city-name').value,
+        imperial = this.$container.querySelector('#ewc-unit-imperial').checked,
+        metric = this.$container.querySelector('#ewc-unit-metric').checked
+
+    if (city !== this.city.name) {
+      this.city.name = city
+    }
+    if (imperial) {
+      this.units = 'imperial'
+    } else {
+      this.units = 'metric'
+    }
+
+    this._fetchWeatherData()
+    this._closeSettings()
+  }
+
+  _bootstrapEvents() {
     // change city input handler
-    this.$container.querySelector('.ewc-weather-widget__city-input')
-                .addEventListener('change', this.changeCity.bind(this))
+    // this.$container.querySelector('.ewc-weather-widget__city-input')
+    //             .addEventListener('change', this.changeCity.bind(this))
+    // open settings handler
+    this.$container.querySelector('.js-ewc-open-settings-btn')
+                .addEventListener('click', this._openSettings.bind(this))
+    // close settings handler
+    this.$container.querySelector('.js-ewc-close-settings-btn')
+                .addEventListener('click', this._closeSettings.bind(this))
+    // save settings handler
+    this.$container.querySelector('.js-ewc-save-settings-btn')
+                .addEventListener('click', this.saveSettings.bind(this))
   }
 }
